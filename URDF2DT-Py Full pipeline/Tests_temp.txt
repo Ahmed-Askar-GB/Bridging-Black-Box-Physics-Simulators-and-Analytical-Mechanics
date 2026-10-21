@@ -1,0 +1,14 @@
+# 1. Run on UR16e (default):
+python animate_robot_interactive.py
+
+# 2. Run on UR5:
+python animate_robot_interactive.py --urdf "universalUR5.urdf"
+
+# 3. Run on ABB IRB 120:
+python animate_robot_interactive.py --urdf "abbIrb120\abbIrb120.urdf"
+
+# 4. Run on Puma 560:
+python animate_robot_interactive.py --urdf "End-to-End MATLAB-CasADi Implementation\puma560_test\puma560_robot_dynamic.urdf"
+
+# 5. Run on 4-DOF SCARA:
+python animate_robot_interactive.py --urdf "URDF2DT\robots\scara\scara_rrpr.urdf"

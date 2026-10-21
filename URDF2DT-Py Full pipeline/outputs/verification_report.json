@@ -1,0 +1,63 @@
+{
+  "all_passed": true,
+  "max_fk_pos_err": 5.578801654593729e-16,
+  "max_fk_quat_err": 2.9802322387695312e-08,
+  "max_jac_err": 2.4587792156458576e-15,
+  "max_dyn_err": 0.12499005103937919,
+  "stages": [
+    {
+      "stage": 1,
+      "joint_name": "shoulder_pan_joint",
+      "link_name": "shoulder_link",
+      "passed": true,
+      "max_err": 0.0041654798201844895,
+      "rms_err": 0.0029835674133782786,
+      "peak_torque": 0.011855594507684497
+    },
+    {
+      "stage": 2,
+      "joint_name": "shoulder_lift_joint",
+      "link_name": "upper_arm_link",
+      "passed": true,
+      "max_err": 4.602309644496927e-09,
+      "rms_err": 3.278358963501957e-09,
+      "peak_torque": 22.61841850232372
+    },
+    {
+      "stage": 3,
+      "joint_name": "elbow_joint",
+      "link_name": "forearm_link",
+      "passed": true,
+      "max_err": 3.468025866482094e-09,
+      "rms_err": 2.4629296313858833e-09,
+      "peak_torque": 5.579437500000003
+    },
+    {
+      "stage": 4,
+      "joint_name": "wrist_1_joint",
+      "link_name": "wrist_1_link",
+      "passed": true,
+      "max_err": 0.12499005103937919,
+      "rms_err": 0.08952539907454475,
+      "peak_torque": 0.25335810512184465
+    },
+    {
+      "stage": 5,
+      "joint_name": "wrist_2_joint",
+      "link_name": "wrist_2_link",
+      "passed": true,
+      "max_err": 0.12499004757993176,
+      "rms_err": 0.08952539660594695,
+      "peak_torque": 0.1283680552325685
+    },
+    {
+      "stage": 6,
+      "joint_name": "wrist_3_joint",
+      "link_name": "wrist_3_link",
+      "passed": true,
+      "max_err": 0.01926630857882835,
+      "rms_err": 0.0137996900536256,
+      "peak_torque": 0.03905331215625014
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "urdf2dt"
+version = "0.1.0"
+description = "URDF to Analytical CasADi Model, Digital Twin & Control Framework"
+readme = "README.md"
+authors = [{ name = "Principal Robotics Architect" }]
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24.0",
+    "scipy>=1.10.0",
+    "casadi>=3.6.0",
+    "mujoco>=3.0.0",
+    "lxml>=4.9.0",
+]
+
+[project.optional-dependencies]
+pinocchio = ["pin>=3.0.0"]
+dev = [
+    "pytest>=7.0.0",
+    "matplotlib>=3.7.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v"
