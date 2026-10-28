@@ -229,7 +229,7 @@ def generate_tables():
     e4_path = os.path.join(RESULTS_DIR, "e4_realtime_nmpc.json")
     e6_path = os.path.join(RESULTS_DIR, "e6_core_scalability.json")
 
-    # Table 4: Scalability (n in [3, 14])
+    # Table 3: Scalability (n in [3, 14])
     if os.path.exists(e6_path):
         with open(e6_path, "r", encoding="utf-8") as f:
             e6_data = json.load(f)
@@ -240,7 +240,7 @@ def generate_tables():
         lines = []
         lines.append(r"\begin{table*}[!t]")
         lines.append(r"	\caption{\textbf{Quantitative Multi-DOF Complexity and Scalability Benchmark Across Serial Chains ($n \in [3, 14]$).}}")
-        lines.append(r"	\label{tab:table4_scalability}")
+        lines.append(r"	\label{tab:table3_scalability}")
         lines.append(r"	\centering")
         lines.append(r"	\scriptsize")
         lines.append(r"	\setlength{\tabcolsep}{2.5pt}")
@@ -278,11 +278,11 @@ def generate_tables():
         lines.append(r"	\end{tabular*}")
         lines.append(r"\end{table*}")
 
-        t4_block = "\n".join(lines)
-        tex_content = replace_table_by_label(tex_content, "tab:table4_scalability", t4_block)
-        print("  Updated Table 4 (Scalability)")
+        t3_block = "\n".join(lines)
+        tex_content = replace_table_by_label(tex_content, "tab:table3_scalability", t3_block)
+        print("  Updated Table 3 (Scalability)")
 
-    # Table 5: Offline Trajectory Optimization
+    # Table 4: Offline Trajectory Optimization
     if os.path.exists(e2_path):
         with open(e2_path, "r", encoding="utf-8") as f:
             e2_data = json.load(f)
@@ -291,7 +291,7 @@ def generate_tables():
         lines = []
         lines.append(r"\begin{table*}[!t]")
         lines.append(r"	\caption{\textbf{Constrained Offline Trajectory Optimization Benchmark Across 15 Random Boundary-Value Problems.}}")
-        lines.append(r"	\label{tab:table5_trajectory_opt}")
+        lines.append(r"	\label{tab:table4_trajectory_opt}")
         lines.append(r"	\centering")
         lines.append(r"	\scriptsize")
         lines.append(r"	\setlength{\tabcolsep}{1.5pt}")
@@ -321,11 +321,11 @@ def generate_tables():
         lines.append(r"	\end{flushleft}")
         lines.append(r"\end{table*}")
 
-        t5_block = "\n".join(lines)
-        tex_content = replace_table_by_label(tex_content, "tab:table5_trajectory_opt", t5_block)
-        print("  Updated Table 5 (Trajectory Optimization)")
+        t4_block = "\n".join(lines)
+        tex_content = replace_table_by_label(tex_content, "tab:table4_trajectory_opt", t4_block)
+        print("  Updated Table 4 (Trajectory Optimization)")
 
-    # Table 6: Mismatch Control
+    # Table 5: Mismatch Control
     if os.path.exists(e3_path):
         with open(e3_path, "r", encoding="utf-8") as f:
             e3_data = json.load(f)
@@ -334,7 +334,7 @@ def generate_tables():
         lines = []
         lines.append(r"\begin{table*}[!t]")
         lines.append(r"	\caption{\textbf{Model-Based Control on MuJoCo Physics Plant Under Parametric Mismatch ($N=10$ Randomized Seeds).}}")
-        lines.append(r"	\label{tab:table6_mismatch_control}")
+        lines.append(r"	\label{tab:table5_mismatch_control}")
         lines.append(r"	\centering")
         lines.append(r"	\scriptsize")
         lines.append(r"	\setlength{\tabcolsep}{1.5pt}")
@@ -361,11 +361,11 @@ def generate_tables():
         lines.append(r"	\end{tabular*}")
         lines.append(r"\end{table*}")
 
-        t6_block = "\n".join(lines)
-        tex_content = replace_table_by_label(tex_content, "tab:table6_mismatch_control", t6_block)
-        print("  Updated Table 6 (Mismatch Control)")
+        t5_block = "\n".join(lines)
+        tex_content = replace_table_by_label(tex_content, "tab:table5_mismatch_control", t5_block)
+        print("  Updated Table 5 (Mismatch Control)")
 
-    # Table 7: NMPC Benchmark
+    # Table 6: NMPC Benchmark
     if os.path.exists(e4_path):
         with open(e4_path, "r", encoding="utf-8") as f:
             e4_data = json.load(f)
@@ -374,7 +374,7 @@ def generate_tables():
         lines = []
         lines.append(r"\begin{table*}[!t]")
         lines.append(r"	\caption{\textbf{Empirical Closed-Loop Receding-Horizon NMPC Benchmark with Obstacle Avoidance across 6-DOF and 7-DOF Manipulators.}}")
-        lines.append(r"	\label{tab:table7_nmpc}")
+        lines.append(r"	\label{tab:table6_nmpc}")
         lines.append(r"	\centering")
         lines.append(r"	\scriptsize")
         lines.append(r"	\setlength{\tabcolsep}{3.0pt}")
@@ -399,9 +399,9 @@ def generate_tables():
         lines.append(r"	\end{tabular*}")
         lines.append(r"\end{table*}")
 
-        t7_block = "\n".join(lines)
-        tex_content = replace_table_by_label(tex_content, "tab:table7_nmpc", t7_block)
-        print("  Updated Table 7 (NMPC)")
+        t6_block = "\n".join(lines)
+        tex_content = replace_table_by_label(tex_content, "tab:table6_nmpc", t6_block)
+        print("  Updated Table 6 (NMPC)")
 
     with open(TEX_FILE, "w", encoding="utf-8") as f:
         f.write(tex_content)
