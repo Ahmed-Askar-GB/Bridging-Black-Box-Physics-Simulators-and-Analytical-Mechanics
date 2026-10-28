@@ -26,8 +26,11 @@ from urdf2dt.analytical import (
     create_batch_simulator,
     casadi_compile,
 )
+from urdf2dt.analytical.model_export import DynamicsModel, export_dynamics_model
 from urdf2dt.digital_twin import MuJoCoTwin, PinocchioTwin, PINOCCHIO_AVAILABLE
+from urdf2dt.digital_twin.plant_adapter import SimulatorPlant, MuJoCoPlant, SimscapePlant
 from urdf2dt.control import ComputedTorqueController, CasadiNMPC
+from urdf2dt.control.trajectory_optimization import TrajectoryOptimizationOCP
 from urdf2dt.verification import (
     verify_invariants,
     verify_kinematics,
@@ -60,6 +63,12 @@ __all__ = [
     "PINOCCHIO_AVAILABLE",
     "ComputedTorqueController",
     "CasadiNMPC",
+    "TrajectoryOptimizationOCP",
+    "DynamicsModel",
+    "export_dynamics_model",
+    "SimulatorPlant",
+    "MuJoCoPlant",
+    "SimscapePlant",
     "verify_invariants",
     "verify_kinematics",
     "verify_dynamics_sequential",

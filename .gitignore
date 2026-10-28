@@ -38,3 +38,14 @@ codegen/
 # SimBiology backup files
 *.sbproj.backup
 *.sbproj.bak
+
+# Python caches & temporary files
+__pycache__/
+*.py[cod]
+*$py.class
+*.npz
+
+# Temporary testing outputs
+URDF2DT-Py Full pipeline/outputs/codegen_test/
+URDF2DT-Py Full pipeline/temp_urdfs/
+

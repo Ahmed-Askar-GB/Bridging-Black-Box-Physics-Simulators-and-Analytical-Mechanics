@@ -66,6 +66,26 @@ class MuJoCoTwin:
                 raise ValueError(f"Gravity vector must have 3 components [gx, gy, gz], got {len(self.gravity)}")
         self.model.opt.gravity[:] = self.gravity
 
+    def reset(self, q: np.ndarray, dq: np.ndarray | None = None) -> None:
+        """Reset internal MuJoCo plant state coordinates and velocities."""
+        q = np.asarray(q, dtype=np.float64).flatten()
+        self.data.qpos[:] = q
+        if dq is not None:
+            dq = np.asarray(dq, dtype=np.float64).flatten()
+            self.data.qvel[:] = dq
+        else:
+            self.data.qvel[:] = 0.0
+        self.data.qacc[:] = 0.0
+        self.data.qfrc_applied[:] = 0.0
+        mujoco.mj_forward(self.model, self.data)
+
+    def step(self, tau: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """Apply actuator torque and advance physics by dt."""
+        tau = np.asarray(tau, dtype=np.float64).flatten()
+        self.data.ctrl[:] = tau
+        mujoco.mj_step(self.model, self.data)
+        return self.data.qpos.copy(), self.data.qvel.copy()
+
     def _compile_mjcf(
         self,
         urdf_path: str,
