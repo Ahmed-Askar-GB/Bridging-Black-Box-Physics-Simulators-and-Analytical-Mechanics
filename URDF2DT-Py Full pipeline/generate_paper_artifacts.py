@@ -83,9 +83,9 @@ def generate_figures():
 
         # (d) Forward Dynamics Latency
         fd_prop_us = [r["fd_prop_us"] for r in scal]
-        axs[1, 1].plot(n_vals, fd_prop_us, "o-", color="#2ca02c", lw=2, label="Cholesky Latency ($\mu$s)")
+        axs[1, 1].plot(n_vals, fd_prop_us, "o-", color="#2ca02c", lw=2, label=r"Cholesky Latency ($\mu$s)")
         axs[1, 1].set_xlabel("Degrees of Freedom $n$", fontweight="bold")
-        axs[1, 1].set_ylabel("Execution Latency ($\mu$s)", fontweight="bold")
+        axs[1, 1].set_ylabel(r"Execution Latency ($\mu$s)", fontweight="bold")
         axs[1, 1].set_title("(d) Single-Step Latency on x86-64 CPU", fontweight="bold")
         axs[1, 1].grid(True, ls=":", alpha=0.6)
         axs[1, 1].legend(fontsize=9)
@@ -148,31 +148,43 @@ def generate_figures():
 
         # (a) Trajectory Opt Iterations: Exact vs L-BFGS
         r_names = [r["name"] for r in e2_data["robots"].values()]
-        iter_exact = [r["mean_iterations_exact"] for r in e2_data["robots"].values()]
-        iter_lbfgs = [r["mean_iterations_lbfgs"] for r in e2_data["robots"].values()]
+        iter_exact = [r["converged_iters_exact_mean"] for r in e2_data["robots"].values()]
+        # For L-BFGS, if 0 converged, represent as cutoff 500 for visual comparison
+        iter_lbfgs = [r["converged_iters_lbfgs_mean"] if r["lbfgs_convergence_pct"] > 0 else 500.0 for r in e2_data["robots"].values()]
         x_pos = np.arange(len(r_names))
         w = 0.35
 
-        axs[0].bar(x_pos - w/2, iter_lbfgs, w, label="Quasi-Newton (L-BFGS)", color="#ff7f0e", alpha=0.85)
-        axs[0].bar(x_pos + w/2, iter_exact, w, label="Exact Symbolic Hessian", color="#2ca02c", alpha=0.85)
+        b1 = axs[0].bar(x_pos - w/2, iter_lbfgs, w, label="Quasi-Newton (L-BFGS)", color="#ff7f0e", alpha=0.85)
+        b2 = axs[0].bar(x_pos + w/2, iter_exact, w, label="Exact Symbolic Hessian", color="#2ca02c", alpha=0.85)
+        # Add hatch to UR16e L-BFGS bar to indicate cutoff
+        b1[1].set_hatch("//")
+        b1[1].set_color("#d62728")
+        axs[0].text(x_pos[1] - w/2, 510, "0% Conv\n(Cutoff 500)", ha="center", va="bottom", fontsize=7.5, color="#d62728", fontweight="bold")
+        axs[0].text(x_pos[2] - w/2, 370, "6.7% Conv\n(1/15 runs)", ha="center", va="bottom", fontsize=7.5, color="#ff7f0e")
+
         axs[0].set_xticks(x_pos)
         axs[0].set_xticklabels(r_names, fontweight="bold")
-        axs[0].set_ylabel("Mean Solver Iterations", fontweight="bold")
-        axs[0].set_title("(a) Trajectory Optimization Iterations (N=50)", fontweight="bold")
+        axs[0].set_ylabel("Solver Iterations (Converged Runs)", fontweight="bold")
+        axs[0].set_title("(a) Trajectory Optimization Iterations (N=15)", fontweight="bold")
+        axs[0].set_ylim(0, 600)
         axs[0].grid(True, axis="y", ls=":", alpha=0.6)
-        axs[0].legend(fontsize=9)
+        axs[0].legend(fontsize=9, loc="upper right")
 
-        # (b) Mismatch Levels RMSE
+        # (b) Mismatch Levels RMSE with Error Bars
         lvls = e3_data["levels"]
-        lvl_names = ["Nominal (0%)", "+-10% Mass", "+-20% Mass", "+-20% + 5kg"]
+        lvl_names = ["Nominal (0%)", "$\pm$10% Mass", "$\pm$20% Mass", "$\pm$20% + 5kg"]
         rmse_ctc = [lvls[k]["mean_rmse_ctc_rad"] for k in sorted(lvls.keys())]
         rmse_pdg = [lvls[k]["mean_rmse_pdg_rad"] for k in sorted(lvls.keys())]
         rmse_pid = [lvls[k]["mean_rmse_pid_rad"] for k in sorted(lvls.keys())]
+        
+        ci_ctc = [lvls[k]["std_rmse_ctc_rad"] for k in sorted(lvls.keys())]
+        ci_pdg = [lvls[k]["std_rmse_pdg_rad"] for k in sorted(lvls.keys())]
+        ci_pid = [lvls[k]["std_rmse_pid_rad"] for k in sorted(lvls.keys())]
 
         x_l = np.arange(len(lvl_names))
-        axs[1].plot(x_l, rmse_pid, "s--", color="#d62728", lw=2, label="Decentralized PID (Simulator Alone)")
-        axs[1].plot(x_l, rmse_pdg, "^--", color="#ff7f0e", lw=2, label="PD + Gravity Comp.")
-        axs[1].plot(x_l, rmse_ctc, "o-", color="#1f77b4", lw=2.5, label="Model-Based CTC (Sim + Model)")
+        axs[1].errorbar(x_l, rmse_pid, yerr=ci_pid, fmt="s--", color="#d62728", lw=2, capsize=4, label="Decentralized PID (Simulator Alone)")
+        axs[1].errorbar(x_l, rmse_pdg, yerr=ci_pdg, fmt="^--", color="#ff7f0e", lw=2, capsize=4, label="PD + Gravity Comp.")
+        axs[1].errorbar(x_l, rmse_ctc, yerr=ci_ctc, fmt="o-", color="#1f77b4", lw=2.5, capsize=4, label="Model-Based CTC (Sim + Model)")
         axs[1].set_xticks(x_l)
         axs[1].set_xticklabels(lvl_names, fontweight="bold", fontsize=8.5)
         axs[1].set_ylabel("Joint Tracking RMSE (rad)", fontweight="bold")
@@ -260,8 +272,8 @@ def generate_tables():
             pr = p["proposed"]
             sp = p["speedup_factor"]
 
-            lines.append(f"		\\multirow{{2}}{{*}}{{\\shortstack[l]{{\\textbf{{{p['name']}}}\\\\($n={p['dof']}$)}}}} & Baseline (Christoffel+Inv) & {b['mean_solve_ms']:.2f} & {b['median_solve_ms']:.2f} & {b['p95_solve_ms']:.2f} & {b['p99_solve_ms']:.2f} & \\textemdash & {b['achievable_rate_hz']:.1f} & {b['tracking_rmse_rad']:.4f} \\\\")
-            lines.append(f"		& Proposed (Momentum+Chol) & \\textbf{{{pr['mean_solve_ms']:.2f}}} & \\textbf{{{pr['median_solve_ms']:.2f}}} & \\textbf{{{pr['p95_solve_ms']:.2f}}} & \\textbf{{{pr['p99_solve_ms']:.2f}}} & \\textbf{{{sp:.2f}$\\times$}} & \\textbf{{{pr['achievable_rate_hz']:.1f}}} & {pr['tracking_rmse_rad']:.4f} \\\\")
+            lines.append(f"		\\multirow{{2}}{{*}}{{\\shortstack[l]{{\\textbf{{{p['name']}}}\\\\($n={p['dof']}$)}}}} & Baseline (Christoffel+Inv) & {b['mean_solve_ms']:.1f} & {b['median_solve_ms']:.1f} & {b['p95_solve_ms']:.1f} & {b['p99_solve_ms']:.1f} & \\textemdash & {b['achievable_rate_hz']:.2f} & {b['tracking_rmse_rad']:.4f} \\\\")
+            lines.append(f"		& Proposed (Momentum+Chol) & \\textbf{{{pr['mean_solve_ms']:.1f}}} & \\textbf{{{pr['median_solve_ms']:.1f}}} & \\textbf{{{pr['p95_solve_ms']:.1f}}} & \\textbf{{{pr['p99_solve_ms']:.1f}}} & \\textbf{{{sp:.2f}$\\times$}} & \\textbf{{{pr['achievable_rate_hz']:.2f}}} & {pr['tracking_rmse_rad']:.4f} \\\\")
             lines.append(r"		\midrule")
 
         if lines[-1] == r"		\midrule":
@@ -284,20 +296,35 @@ def generate_tables():
         robs = e2_data["robots"]
         lines = []
         lines.append(r"\begin{table*}[!t]")
-        lines.append(r"	\caption{\textbf{Constrained Offline Trajectory Optimization Benchmark Across 50 Random Boundary-Value Problems.}}")
+        lines.append(r"	\caption{\textbf{Constrained Offline Trajectory Optimization Benchmark Across 15 Random Boundary-Value Problems.}}")
         lines.append(r"	\label{tab:table7_trajectory_opt}")
         lines.append(r"	\centering")
-        lines.append(r"	\small")
-        lines.append(r"	\begin{tabularx}{\textwidth}{lcccc>{\raggedright\arraybackslash}X}")
+        lines.append(r"	\scriptsize")
+        lines.append(r"	\setlength{\tabcolsep}{1.5pt}")
+        lines.append(r"	\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}l c c c c c c c}")
         lines.append(r"		\toprule")
-        lines.append(r"		\textbf{Manipulator} & \textbf{Exact Conv. (\%)} & \textbf{L-BFGS Conv. (\%)} & \textbf{Exact Iter.} & \textbf{L-BFGS Iter.} & \textbf{MuJoCo Replay Tracking RMSE (rad)} \\")
+        lines.append(r"		\textbf{Manipulator} & \shortstack{\textbf{Exact}\\\textbf{Conv.}} & \shortstack{\textbf{L-BFGS}\\\textbf{Conv.}} & \shortstack{\textbf{Exact Iters}\\\textbf{[95\% CI]}} & \shortstack{\textbf{L-BFGS Iters}\\\textbf{[95\% CI]}} & \shortstack{\textbf{Solve Time (s)}\\\textbf{Exact / L-BFGS}} & \shortstack{\textbf{Speedup}\\\textbf{Factor}} & \shortstack{\textbf{Replay RMSE (rad)}\\\textbf{CTC / Open-Loop}} \\")
         lines.append(r"		\midrule")
 
         for k, r in robs.items():
-            lines.append(f"		\\textbf{{{r['name']}}} ($n={r['dof']}$) & {r['exact_convergence_pct']:.1f}\\% & {r['lbfgs_convergence_pct']:.1f}\\% & {r['mean_iterations_exact']:.1f} & {r['mean_iterations_lbfgs']:.1f} (\\textbf{{-{r['iteration_reduction_pct']:.1f}\\%}}) & {r['mean_replay_rmse_rad']:.4e} (Max: {r['max_replay_rmse_rad']:.4e}) \\\\")
+            ex_ci = f"{r['converged_iters_exact_mean']:.1f} [{r['converged_iters_exact_ci95'][0]:.1f}, {r['converged_iters_exact_ci95'][1]:.1f}]"
+            if r['lbfgs_convergence_pct'] > 0:
+                lbfgs_ci = f"{r['converged_iters_lbfgs_mean']:.1f} [{r['converged_iters_lbfgs_ci95'][0]:.1f}, {r['converged_iters_lbfgs_ci95'][1]:.1f}]"
+                time_str = f"{r['wall_time_exact_mean_s']:.2f} / {r['wall_time_lbfgs_mean_s']:.2f}"
+                speedup_str = f"\\textbf{{{r['wall_time_speedup']:.2f}$\\times$}}"
+            else:
+                lbfgs_ci = r"Cutoff (500 iters)"
+                time_str = f"{r['wall_time_exact_mean_s']:.2f} / \\textemdash"
+                speedup_str = r"\textemdash"
+
+            replay_str = f"{r['mean_ctc_replay_rmse_rad']:.4f} / {r['mean_open_replay_rmse_rad']:.4f}"
+            lines.append(f"		\\textbf{{{r['name']}}} ($n={r['dof']}$) & {r['exact_convergence_pct']:.0f}\\% & {r['lbfgs_convergence_pct']:.1f}\\% & {ex_ci} & {lbfgs_ci} & {time_str} & {speedup_str} & {replay_str} \\\\")
 
         lines.append(r"		\bottomrule")
-        lines.append(r"	\end{tabularx}")
+        lines.append(r"	\end{tabular*}")
+        lines.append(r"	\begin{flushleft}")
+        lines.append(r"		\vspace{-2pt}\scriptsize Note: Solver iteration counts and wall-clock times are evaluated strictly over converged runs ($N=15$ problems per arm). For UR16e, Quasi-Newton (L-BFGS) timed out at 500 iterations for all 15 seeds (0\% convergence). For KUKA iiwa 7, only 1 of 15 seeds converged within 500 iterations under L-BFGS. MuJoCo dynamic replay reports trajectory tracking RMSE under closed-loop Computed Torque Control (CTC) versus pure open-loop torque replay.")
+        lines.append(r"	\end{flushleft}")
         lines.append(r"\end{table*}")
 
         tab7_file = os.path.join(TAB_DIR, "table7_trajectory_opt.tex")
@@ -316,18 +343,29 @@ def generate_tables():
         lines.append(r"	\caption{\textbf{Model-Based Control on MuJoCo Physics Plant Under Parametric Mismatch ($N=10$ Randomized Seeds).}}")
         lines.append(r"	\label{tab:table8_mismatch_control}")
         lines.append(r"	\centering")
-        lines.append(r"	\small")
-        lines.append(r"	\begin{tabularx}{\textwidth}{p{4.5cm}cccc>{\raggedright\arraybackslash}X}")
+        lines.append(r"	\scriptsize")
+        lines.append(r"	\setlength{\tabcolsep}{1.5pt}")
+        lines.append(r"	\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}l c c c c >{\raggedright\arraybackslash}p{2.8cm}}")
         lines.append(r"		\toprule")
-        lines.append(r"		\textbf{Parametric Mismatch Condition} & \textbf{CTC RMSE (rad)} & \textbf{PD+G RMSE (rad)} & \textbf{PID RMSE (rad)} & \textbf{Error Red. (\%)} & \textbf{Robustness \& Chattering Assessment} \\")
+        lines.append(r"		\textbf{Mismatch Condition} & \shortstack{\textbf{CTC RMSE (rad)}\\\textbf{[95\% CI]}} & \shortstack{\textbf{PD+G RMSE (rad)}\\\textbf{[95\% CI]}} & \shortstack{\textbf{PID RMSE (rad)}\\\textbf{[95\% CI]}} & \shortstack{\textbf{Error Red.}\\\textbf{(\%)}} & \textbf{Robustness \& Chattering Assessment} \\")
         lines.append(r"		\midrule")
 
         for k in sorted(lvls.keys()):
             lvl = lvls[k]
-            lines.append(f"		{lvl['name']} & {lvl['mean_rmse_ctc_rad']:.4e} & {lvl['mean_rmse_pdg_rad']:.4e} & {lvl['mean_rmse_pid_rad']:.4e} & \\textbf{{{lvl['error_reduction_pct']:.1f}\\%}} & Globally stable, 0 torque chattering across all 10 seeds. \\\\")
+            name_clean = lvl['name'].replace("%", r"\%").replace("+-", r"$\pm$")
+            ctc_ci = f"{lvl['mean_rmse_ctc_rad']:.4f} [{lvl['ci95_rmse_ctc_rad'][0]:.4f}, {lvl['ci95_rmse_ctc_rad'][1]:.4f}]"
+            pdg_ci = f"{lvl['mean_rmse_pdg_rad']:.4f} [{lvl['ci95_rmse_pdg_rad'][0]:.4f}, {lvl['ci95_rmse_pdg_rad'][1]:.4f}]"
+            pid_ci = f"{lvl['mean_rmse_pid_rad']:.4f} [{lvl['ci95_rmse_pid_rad'][0]:.4f}, {lvl['ci95_rmse_pid_rad'][1]:.4f}]"
+            
+            if k == "level_3":
+                assess = "Integral PID rejects static load; motivates adaptive CTC."
+            else:
+                assess = "Globally stable, 0 torque chattering across all 10 seeds."
+
+            lines.append(f"		{name_clean} & {ctc_ci} & {pdg_ci} & {pid_ci} & \\textbf{{{lvl['error_reduction_pct']:.1f}\\%}} & {assess} \\\\")
 
         lines.append(r"		\bottomrule")
-        lines.append(r"	\end{tabularx}")
+        lines.append(r"	\end{tabular*}")
         lines.append(r"\end{table*}")
 
         tab8_file = os.path.join(TAB_DIR, "table8_mismatch_control.tex")

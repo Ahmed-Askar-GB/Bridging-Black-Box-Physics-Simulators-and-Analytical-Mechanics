@@ -321,6 +321,10 @@ def run_benchmark():
             tracking_errors = []
             min_obs_dists = []
 
+            # Solver Warmup: initialize IPOPT memory structures and sparsity caches
+            p_warmup = np.zeros(2 * n_dof + (N_horizon + 1) * (2 * n_dof))
+            _ = solver(x0=w0, lbx=nmpc_pack["lbw"], ubx=nmpc_pack["ubw"], lbg=nmpc_pack["lbg"], ubg=nmpc_pack["ubg"], p=p_warmup)
+
             twin.reset(x_ref_full[0, :n_dof], np.zeros(n_dof))
 
             for step_k in range(N_steps_sim):
@@ -387,6 +391,7 @@ def run_benchmark():
                 "achievable_rate_hz": 1e3 / mean_ms,
                 "tracking_rmse_rad": rmse_rad,
                 "min_obstacle_distance_m": min_clearance,
+                "solve_times_ms": solve_times_ms,
             }
 
             print(f"  [{form_name.upper():8s}] Mean Solve: {mean_ms:5.2f} ms (p95: {p95_ms:5.2f} ms, p99: {p99_ms:5.2f} ms) | Rate: {1e3/mean_ms:5.1f} Hz | Min Dist: {min_clearance:.4f} m")

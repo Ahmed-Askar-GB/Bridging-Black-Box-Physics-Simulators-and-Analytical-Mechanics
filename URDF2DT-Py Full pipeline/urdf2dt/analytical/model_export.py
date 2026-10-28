@@ -72,8 +72,16 @@ class DynamicsModel:
         self.df_dx_fun = cs.Function("df_dx", [x, tau], [df_dx], ["x", "u"], ["df_dx"])
         self.df_du_fun = cs.Function("df_du", [x, tau], [df_du], ["x", "u"], ["df_du"])
 
-        # 2. Discrete-time RK4 integrator & exact discrete Jacobians
+        # 2. Discrete-time Semi-Implicit Euler integrator & exact discrete Jacobians
         dt_sym = cs.SX.sym("dt")
+        v_next_euler = dq + dt_sym * ddq_expr
+        q_next_euler = q + dt_sym * v_next_euler
+        x_next_euler = cs.vertcat(q_next_euler, v_next_euler)
+        self.euler_step_fun = cs.Function("euler_step", [x, tau, dt_sym], [x_next_euler], ["x", "u", "dt"], ["x_next"])
+        self.dEuler_dx_fun = cs.Function("dEuler_dx", [x, tau, dt_sym], [cs.jacobian(x_next_euler, x)], ["x", "u", "dt"], ["A"])
+        self.dEuler_du_fun = cs.Function("dEuler_du", [x, tau, dt_sym], [cs.jacobian(x_next_euler, tau)], ["x", "u", "dt"], ["B"])
+
+        # 3. Discrete-time RK4 integrator & exact discrete Jacobians
         k1_v = dq
         k1_a = ddq_expr
 
