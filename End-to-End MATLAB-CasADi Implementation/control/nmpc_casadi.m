@@ -16,6 +16,7 @@ classdef nmpc_casadi < handle
 
     properties
         dyn
+        fk
         n
         N
         dt
@@ -27,6 +28,10 @@ classdef nmpc_casadi < handle
         signs
         solver_opts
         last_sol
+        obstacle_center
+        obstacle_radius
+        safety_margin
+        r_safe
     end
 
     methods
@@ -48,6 +53,20 @@ classdef nmpc_casadi < handle
             if nargin < 2 || isempty(opts)
                 opts = struct();
             end
+
+            % FK and obstacle parameters
+            obj.fk = [];
+            if isfield(opts, 'fk') && ~isempty(opts.fk)
+                obj.fk = opts.fk;
+            end
+
+            obj.obstacle_center = [];
+            if isfield(opts, 'obstacle_center') && ~isempty(opts.obstacle_center)
+                obj.obstacle_center = opts.obstacle_center(:);
+            end
+            obj.obstacle_radius = 0.12; if isfield(opts, 'obstacle_radius'), obj.obstacle_radius = opts.obstacle_radius; end
+            obj.safety_margin   = 0.04; if isfield(opts, 'safety_margin'),   obj.safety_margin   = opts.safety_margin; end
+            obj.r_safe          = obj.obstacle_radius + obj.safety_margin;
 
             % Extract options with intelligent defaults
             obj.N  = 15;        if isfield(opts, 'N'),  obj.N  = opts.N; end
@@ -143,6 +162,14 @@ classdef nmpc_casadi < handle
 
                 obj.opti.subject_to(obj.X(:, k+1) == [q_next; v_next]);
 
+                % Obstacle avoidance constraint
+                if ~isempty(obj.obstacle_center) && ~isempty(obj.fk)
+                    T_ee = obj.fk.fk_ee_fun(q_k);
+                    p_ee = T_ee(1:3, 4);
+                    dist_sq = dot(p_ee - obj.obstacle_center, p_ee - obj.obstacle_center);
+                    obj.opti.subject_to(dist_sq >= obj.r_safe^2);
+                end
+
                 % Torque limit constraints
                 obj.opti.subject_to(-tau_max <= u_k <= tau_max);
 
@@ -166,7 +193,7 @@ classdef nmpc_casadi < handle
             obj.last_sol = [];
         end
 
-        function [tau_opt, X_pred, U_pred, success] = solve(obj, x_current, X_ref)
+        function [tau_opt, X_pred, U_pred, success, info] = solve(obj, x_current, X_ref)
             % SOLVE  Solves the optimal control NLP for the next control action.
             %
             % INPUTS:
@@ -178,7 +205,9 @@ classdef nmpc_casadi < handle
             %   X_pred:    [2n x (N+1)] predicted state trajectory
             %   U_pred:    [n x N] predicted control trajectory
             %   success:   (logical) solver convergence flag
+            %   info:      (struct) timing and telemetry diagnostics
 
+            t_start = tic;
             x_curr = double(x_current(:));
             q_curr = x_curr(1:obj.n);
             v_curr = x_curr(obj.n+1:end);
@@ -206,7 +235,6 @@ classdef nmpc_casadi < handle
                     obj.opti.set_initial(obj.X, obj.last_sol.value(obj.X));
                     obj.opti.set_initial(obj.U, obj.last_sol.value(obj.U));
                 catch
-                    % Fallback to reference initialization
                     obj.opti.set_initial(obj.X, X_ref_dh);
                 end
             else
@@ -214,20 +242,18 @@ classdef nmpc_casadi < handle
             end
 
             success = true;
+            info = struct();
             try
                 sol = obj.opti.solve();
+                t_solve = toc(t_start);
                 obj.last_sol = sol;
 
                 X_pred_dh = full(sol.value(obj.X));
                 U_pred_dh = full(sol.value(obj.U));
 
-                % Optimal first control action in DH
                 u0_dh = U_pred_dh(:, 1);
-
-                % Map back to URDF frames
                 tau_opt = obj.signs .* u0_dh;
 
-                % Map predicted states and controls back to URDF
                 X_pred = zeros(size(X_pred_dh));
                 for k = 1:size(X_pred_dh, 2)
                     X_pred(1:obj.n, k)     = obj.signs .* X_pred_dh(1:obj.n, k);
@@ -239,14 +265,21 @@ classdef nmpc_casadi < handle
                     U_pred(:, k) = obj.signs .* U_pred_dh(:, k);
                 end
 
+                stats = obj.opti.stats();
+                info.solve_time_ms = t_solve * 1000.0;
+                info.iterations    = stats.iter_count;
+                info.cost          = full(sol.value(obj.opti.f));
+
             catch ME
+                t_solve = toc(t_start);
                 success = false;
-                warning('nmpc_casadi:SolveFailed', 'Opti solve failed: %s. Using gravity compensation.', ME.message);
-                % Fallback: Gravity compensation
                 G_val = full(obj.dyn.G_fun(q_dh));
                 tau_opt = obj.signs .* G_val;
                 X_pred = X_ref;
                 U_pred = repmat(tau_opt, 1, obj.N);
+                info.solve_time_ms = t_solve * 1000.0;
+                info.iterations    = 0;
+                info.cost          = inf;
             end
         end
     end

@@ -198,7 +198,37 @@ function dyn = dynamics_matlab(dh, inertia, chain, opts)
     end
 
     % -------------------------------------------------------------------------
-    % 5. Inverse Dynamics: tau = M(q)*ddq + C(q, dq)*dq + G(q)
+    % 5. Momentum Coriolis Bias: c_bias = d(M*dq)/dt - 0.5*grad_q(dq'*M*dq)
+    % -------------------------------------------------------------------------
+    function c_bias = compute_c_bias(q, dq)
+        q  = double(q(:));
+        dq = double(dq(:));
+        eps_step = 1e-7;
+
+        % Total time derivative d(M*dq)/dt via finite difference along dq
+        M_curr = compute_mass_matrix(q);
+        p_curr = M_curr * dq;
+
+        q_next_step = q + eps_step * dq;
+        M_next_step = compute_mass_matrix(q_next_step);
+        p_next_step = M_next_step * dq;
+        dp_dt = (p_next_step - p_curr) / eps_step;
+
+        % Gradient of kinetic energy w.r.t. q
+        grad_T = zeros(n, 1);
+        for k = 1:n
+            qk_p = q; qk_p(k) = qk_p(k) + eps_step;
+            qk_m = q; qk_m(k) = qk_m(k) - eps_step;
+            T_p = 0.5 * (dq' * compute_mass_matrix(qk_p) * dq);
+            T_m = 0.5 * (dq' * compute_mass_matrix(qk_m) * dq);
+            grad_T(k) = (T_p - T_m) / (2.0 * eps_step);
+        end
+
+        c_bias = dp_dt - grad_T;
+    end
+
+    % -------------------------------------------------------------------------
+    % 6. Inverse Dynamics: tau = M(q)*ddq + c_bias(q, dq) + G(q)
     % -------------------------------------------------------------------------
     function tau = compute_inverse_dynamics(q, dq, ddq)
         q   = double(q(:));
@@ -206,14 +236,14 @@ function dyn = dynamics_matlab(dh, inertia, chain, opts)
         ddq = double(ddq(:));
 
         M = compute_mass_matrix(q);
-        C = compute_coriolis_matrix(q, dq);
+        c_bias = compute_c_bias(q, dq);
         G = compute_gravity_vector(q);
 
-        tau = M * ddq + C * dq + G;
+        tau = M * ddq + c_bias + G;
     end
 
     % -------------------------------------------------------------------------
-    % 6. Forward Dynamics: ddq = M(q)^{-1} * (tau - C*dq - G)
+    % 7. Forward Dynamics: ddq = R \ (R' \ (tau - c_bias - G)) via Cholesky
     % -------------------------------------------------------------------------
     function ddq = compute_forward_dynamics(q, dq, tau)
         q   = double(q(:));
@@ -221,10 +251,16 @@ function dyn = dynamics_matlab(dh, inertia, chain, opts)
         tau = double(tau(:));
 
         M = compute_mass_matrix(q);
-        C = compute_coriolis_matrix(q, dq);
+        c_bias = compute_c_bias(q, dq);
         G = compute_gravity_vector(q);
+        bias_f = tau - c_bias - G;
 
-        ddq = M \ (tau - C * dq - G);
+        try
+            R = chol(M);
+            ddq = R \ (R' \ bias_f);
+        catch
+            ddq = M \ bias_f;
+        end
     end
 
     % Package into output struct
@@ -232,6 +268,7 @@ function dyn = dynamics_matlab(dh, inertia, chain, opts)
     dyn.n               = n;
     dyn.M_fun           = @(q) compute_mass_matrix(q);
     dyn.C_fun           = @(q, dq) compute_coriolis_matrix(q, dq);
+    dyn.c_bias_fun      = @(q, dq) compute_c_bias(q, dq);
     dyn.G_fun           = @(q) compute_gravity_vector(q);
     dyn.tau_fun         = @(q, dq, ddq) compute_inverse_dynamics(q, dq, ddq);
     dyn.forward_dyn_fun = @(q, dq, tau) compute_forward_dynamics(q, dq, tau);
