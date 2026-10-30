@@ -190,6 +190,14 @@ def dynamics_casadi(
     tau_fun = cs.Function("tau_fun", [q, dq, ddq], [tau_sym], ["q", "dq", "ddq"], ["tau"])
     forward_dyn_fun = cs.Function("forward_dyn_fun", [q, dq, tau], [fwd_ddq], ["q", "dq", "tau"], ["ddq"])
 
+    # Matrix-Free Hessian-Vector Product (HVP) via forward-over-reverse AD:
+    # Based on Pearlmutter (1994) and Margossian (2019).
+    # Evaluates \nabla_q^2 V(q) * v = (\partial G(q)/\partial q) * v in O(cost(G))
+    # without explicitly materializing or storing the n x n Hessian matrix.
+    v_dir = cs.SX.sym("v_dir", n)
+    hvp_G_sym = cs.jtimes(G_sym, q, v_dir)
+    hvp_G_fun = cs.Function("hvp_G_fun", [q, v_dir], [hvp_G_sym], ["q", "v_dir"], ["hvp_G"])
+
     # High-performance discrete time-step function: x_next = step_fun(x, tau)
     dt_default = 0.001
     x_state = cs.vertcat(q, dq)
@@ -225,6 +233,7 @@ def dynamics_casadi(
         tau_fun=tau_fun,
         forward_dyn_fun=forward_dyn_fun,
         step_fun=step_fun,
+        hvp_G_fun=hvp_G_fun,
         g_vec=g_arr,
     )
 
@@ -262,3 +271,32 @@ def create_batch_simulator(model: CasadiModel, dt: float = 0.001, N_steps: int =
     step_single = cs.Function("step_single", [x, tau], [x_next], ["x", "u"], ["x_next"])
     sim_batch = step_single.mapaccum("sim_batch", N_steps)
     return sim_batch
+
+
+def eval_hvp(func_scalar: cs.SX, var: cs.SX, direction: cs.SX) -> cs.SX:
+    """Compute exact matrix-free Hessian-vector product \\nabla^2 f(x) * v via forward-over-reverse AD.
+
+    Parameters
+    ----------
+    func_scalar : cs.SX
+        Scalar symbolic function/expression f(x).
+    var : cs.SX
+        Vector of decision/state variables x.
+    direction : cs.SX
+        Perturbation direction vector v with the same dimension as x.
+
+    Returns
+    -------
+    cs.SX
+        Exact Hessian-vector product \\nabla^2 f(x) * v.
+
+    References
+    ----------
+    Pearlmutter, B. A. (1994). Fast Exact Multiplication by the Hessian.
+    Neural Computation, 6(1):147-160.
+    Margossian, C. C. (2019). A Review of Automatic Differentiation and its Efficient Implementation.
+    WIREs Data Mining and Knowledge Discovery, 9(4):e1305.
+    """
+    grad_f = cs.gradient(func_scalar, var)
+    return cs.jtimes(grad_f, var, direction)
+

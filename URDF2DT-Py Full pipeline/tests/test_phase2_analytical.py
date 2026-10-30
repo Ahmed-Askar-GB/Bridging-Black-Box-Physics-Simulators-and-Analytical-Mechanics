@@ -114,3 +114,25 @@ def test_casadi_compile(parsed_models, tmp_path):
     assert os.path.exists(res["h_filepath"])
     assert os.path.getsize(res["c_filepath"]) > 1000
     assert os.path.getsize(res["h_filepath"]) > 100
+
+
+def test_matrix_free_hvp(parsed_models):
+    """Test matrix-free Hessian-vector products based on Pearlmutter (1994) and Margossian (2019)."""
+    _, _, _, _, model = parsed_models
+    assert model.hvp_G_fun is not None
+
+    q = np.array([0.15, -0.25, 0.35, -0.45, 0.55, -0.65])
+    v = np.array([0.02, -0.04, 0.06, -0.08, 0.10, -0.12])
+
+    # 1. Evaluate HVP via forward-over-reverse AD
+    hvp_val = np.array(model.hvp_G_fun(q, v)).flatten()
+
+    # 2. Compare against central difference finite differences of G(q)
+    # Theoretical noise floor is O(sqrt(eps_mach)) ~ 1.49e-8
+    eps = 1e-7
+    G_plus = np.array(model.G_fun(q + eps * v)).flatten()
+    G_minus = np.array(model.G_fun(q - eps * v)).flatten()
+    hvp_fd = (G_plus - G_minus) / (2.0 * eps)
+
+    assert np.allclose(hvp_val, hvp_fd, atol=1e-5)
+    assert np.linalg.norm(hvp_val - hvp_fd) < 1e-5

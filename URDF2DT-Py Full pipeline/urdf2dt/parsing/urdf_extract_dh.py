@@ -96,7 +96,8 @@ def urdf_extract_dh(chain: Chain, verbose: bool = False) -> DHTable:
                 else:
                     X_dir = np.array([1.0, 0.0, 0.0])
 
-                if np.dot(np.cross(prev_Z, curr_Z), X_dir) > 0.0:
+                # Choose X_dir direction to preserve continuity with preceding frame X[:, i]
+                if np.dot(X_dir, X[:, i]) < -0.1:
                     X_dir = -X_dir
                 X[:, i + 1] = X_dir
 

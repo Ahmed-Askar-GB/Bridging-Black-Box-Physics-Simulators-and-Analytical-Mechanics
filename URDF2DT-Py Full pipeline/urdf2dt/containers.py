@@ -105,6 +105,7 @@ class CasadiModel:
     forward_dyn_fun: cs.Function
     step_fun: Optional[cs.Function] = None
     batch_sim_fun: Optional[Any] = None
+    hvp_G_fun: Optional[cs.Function] = None
     g_vec: np.ndarray = field(default_factory=lambda: np.array([0.0, 0.0, -9.81]))
 
 
