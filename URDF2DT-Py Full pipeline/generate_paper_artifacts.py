@@ -182,9 +182,9 @@ def generate_figures():
         ci_pid = [lvls[k]["std_rmse_pid_rad"] for k in sorted(lvls.keys())]
 
         x_l = np.arange(len(lvl_names))
-        axs[1].errorbar(x_l, rmse_pid, yerr=ci_pid, fmt="s--", color="#d62728", lw=2, capsize=4, label="Decentralized PID (Simulator Alone)")
+        axs[1].errorbar(x_l, rmse_pid, yerr=ci_pid, fmt="s--", color="#d62728", lw=2, capsize=4, label="PID Independent Joint Control (Simulator Alone)")
         axs[1].errorbar(x_l, rmse_pdg, yerr=ci_pdg, fmt="^--", color="#ff7f0e", lw=2, capsize=4, label="PD + Gravity Comp.")
-        axs[1].errorbar(x_l, rmse_ctc, yerr=ci_ctc, fmt="o-", color="#1f77b4", lw=2.5, capsize=4, label="Model-Based CTC (Sim + Model)")
+        axs[1].errorbar(x_l, rmse_ctc, yerr=ci_ctc, fmt="o-", color="#1f77b4", lw=2.5, capsize=4, label="Model-Based PD-CTC (Sim + Model)")
         axs[1].set_xticks(x_l)
         axs[1].set_xticklabels(lvl_names, fontweight="bold", fontsize=8.5)
         axs[1].set_ylabel("Joint Tracking RMSE (rad)", fontweight="bold")
@@ -294,10 +294,10 @@ def generate_tables():
         lines.append(r"	\label{tab:table4_trajectory_opt}")
         lines.append(r"	\centering")
         lines.append(r"	\scriptsize")
-        lines.append(r"	\setlength{\tabcolsep}{1.5pt}")
+        lines.append(r"	\setlength{\tabcolsep}{8pt}")
         lines.append(r"	\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}l c c c c c c c}")
         lines.append(r"		\toprule")
-        lines.append(r"		\textbf{Manipulator} & \shortstack{\textbf{Exact}\\\textbf{Conv.}} & \shortstack{\textbf{L-BFGS}\\\textbf{Conv.}} & \shortstack{\textbf{Exact Iters}\\\textbf{[95\% CI]}} & \shortstack{\textbf{L-BFGS Iters}\\\textbf{[95\% CI]}} & \shortstack{\textbf{Solve Time (s)}\\\textbf{Exact / L-BFGS}} & \shortstack{\textbf{Speedup}\\\textbf{Factor}} & \shortstack{\textbf{Replay RMSE (rad)}\\\textbf{CTC / Open-Loop}} \\")
+        lines.append(r"		\textbf{Manipulator} & \shortstack{\textbf{Exact}\\\textbf{Conv.}} & \shortstack{\textbf{L-BFGS}\\\textbf{Conv.}} & \shortstack{\textbf{Exact Iters}\\\textbf{[95\% CI]}} & \shortstack{\textbf{L-BFGS Iters}\\\textbf{[95\% CI]}} & \shortstack{\textbf{Solve Time (s)}\\\textbf{Exact / L-BFGS}} & \shortstack{\textbf{Speedup}\\\textbf{Factor}} & \shortstack{\textbf{Replay RMSE (rad)}\\\textbf{PD-CTC / Open-Loop}} \\")
         lines.append(r"		\midrule")
 
         for k, r in robs.items():
@@ -317,7 +317,7 @@ def generate_tables():
         lines.append(r"		\bottomrule")
         lines.append(r"	\end{tabular*}")
         lines.append(r"	\begin{flushleft}")
-        lines.append(r"		\vspace{-2pt}\scriptsize Note: Solver iteration counts and wall-clock times are evaluated strictly over converged runs ($N=15$ problems per arm). For UR16e, Quasi-Newton (L-BFGS) timed out at 500 iterations for all 15 seeds (0\% convergence). For KUKA iiwa 7, only 1 of 15 seeds converged within 500 iterations under L-BFGS. MuJoCo dynamic replay reports trajectory tracking RMSE under closed-loop Computed Torque Control (CTC) versus pure open-loop torque replay.")
+        lines.append(r"		\vspace{-2pt}\scriptsize Note: Solver iteration counts and wall-clock times are evaluated strictly over converged runs ($N=15$ problems per arm). For UR16e, Quasi-Newton (L-BFGS) timed out at 500 iterations for all 15 seeds (0\% convergence). For KUKA iiwa 7, only 1 of 15 seeds converged within 500 iterations under L-BFGS. MuJoCo dynamic replay reports trajectory tracking RMSE under closed-loop PD-Computed Torque Control (PD-CTC) versus pure open-loop torque replay.")
         lines.append(r"	\end{flushleft}")
         lines.append(r"\end{table*}")
 
@@ -337,10 +337,10 @@ def generate_tables():
         lines.append(r"	\label{tab:table5_mismatch_control}")
         lines.append(r"	\centering")
         lines.append(r"	\scriptsize")
-        lines.append(r"	\setlength{\tabcolsep}{1.5pt}")
-        lines.append(r"	\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}l c c c c >{\raggedright\arraybackslash}p{2.8cm}}")
+        lines.append(r"	\setlength{\tabcolsep}{8pt}")
+        lines.append(r"\t\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}l c c c c}")
         lines.append(r"		\toprule")
-        lines.append(r"		\textbf{Mismatch Condition} & \shortstack{\textbf{CTC RMSE (rad)}\\\textbf{[95\% CI]}} & \shortstack{\textbf{PD+G RMSE (rad)}\\\textbf{[95\% CI]}} & \shortstack{\textbf{PID RMSE (rad)}\\\textbf{[95\% CI]}} & \shortstack{\textbf{Error Red.}\\\textbf{(\%)}} & \textbf{Robustness \& Chattering Assessment} \\")
+        lines.append(r"\t\t\textbf{Mismatch Condition} & \shortstack{\textbf{PD-CTC RMSE (rad)}\\\textbf{[95\% CI]}} & \shortstack{\textbf{PD+G RMSE (rad)}\\\textbf{[95\% CI]}} & \shortstack{\textbf{PID RMSE (rad)}\\\textbf{[95\% CI]}} & \shortstack{\textbf{Error Red.}\\\textbf{(\%)}} \\")
         lines.append(r"		\midrule")
 
         for k in sorted(lvls.keys()):
@@ -351,11 +351,11 @@ def generate_tables():
             pid_ci = f"{lvl['mean_rmse_pid_rad']:.4f} [{lvl['ci95_rmse_pid_rad'][0]:.4f}, {lvl['ci95_rmse_pid_rad'][1]:.4f}]"
             
             if k == "level_3":
-                assess = "Integral PID rejects static load; motivates adaptive CTC."
+                assess = "Integral PID rejects static load; motivates adaptive PD-CTC."
             else:
                 assess = "Globally stable, 0 torque chattering across all 10 seeds."
 
-            lines.append(f"		{name_clean} & {ctc_ci} & {pdg_ci} & {pid_ci} & \\textbf{{{lvl['error_reduction_pct']:.1f}\\%}} & {assess} \\\\")
+            lines.append(f"\t\t{name_clean} & {ctc_ci} & {pdg_ci} & {pid_ci} & \\textbf{{{lvl['error_reduction_pct']:.1f}\\%}} \\\\")
 
         lines.append(r"		\bottomrule")
         lines.append(r"	\end{tabular*}")

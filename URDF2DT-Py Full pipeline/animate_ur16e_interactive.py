@@ -61,7 +61,7 @@ def find_ur16e_urdf() -> tuple[str, str]:
     candidate_paths = [
         current_dir.parent / "End-to-End MATLAB-CasADi Implementation" / "test_UR16e" / "universalUR16e.urdf",
         current_dir / ".." / "End-to-End MATLAB-CasADi Implementation" / "test_UR16e" / "universalUR16e.urdf",
-        Path(r"C:\Users\User\OneDrive - Egypt Japan University Of Science and Technology (E-JUST)\1- Research\Data-Driven\URDF Dynamic\End-to-End MATLAB-CasADi Implementation\test_UR16e\universalUR16e.urdf"),
+        Path(__file__).resolve().parents[1] / "End-to-End MATLAB-CasADi Implementation" / "test_UR16e" / "universalUR16e.urdf",
     ]
 
     for p in candidate_paths:

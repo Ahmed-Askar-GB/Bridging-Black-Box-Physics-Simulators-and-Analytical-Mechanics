@@ -4,7 +4,7 @@ import json
 
 headers = {'User-Agent': 'Mozilla/5.0'}
 
-target_dir = os.path.join(r"C:\Users\User\OneDrive - Egypt Japan University Of Science and Technology (E-JUST)\1- Research\Data-Driven\URDF Dynamic\End-to-End MATLAB-CasADi Implementation", "test_UR16e")
+target_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_UR16e")
 os.makedirs(target_dir, exist_ok=True)
 
 def download_dir(api_url, local_dst):

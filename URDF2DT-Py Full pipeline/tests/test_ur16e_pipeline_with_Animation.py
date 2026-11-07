@@ -385,9 +385,14 @@ def run_ur16e_verification_and_animation(
     # -------------------------------------------------------------------------
     # STAGE 5: Multi-Panel Visual Comparison Plots (Matplotlib)
     # -------------------------------------------------------------------------
+    def _safe_path(p: str) -> str:
+        if os.name == "nt" and len(os.path.abspath(p)) >= 240 and not p.startswith("\\\\?\\"):
+            return "\\\\?\\" + os.path.abspath(p)
+        return p
+
     if save_dir is None:
         save_dir = os.path.join(os.path.dirname(urdf_path), "results")
-    os.makedirs(save_dir, exist_ok=True)
+    os.makedirs(_safe_path(save_dir), exist_ok=True)
 
     pkg_outputs_dir = os.path.join(PKG_ROOT, "outputs_ur16e")
     os.makedirs(pkg_outputs_dir, exist_ok=True)
@@ -453,9 +458,9 @@ def run_ur16e_verification_and_animation(
     ax4.grid(True)
 
     plt.tight_layout()
-    fig1_path = os.path.join(save_dir, "ur16e_kinematics_comparison.png")
+    fig1_path = _safe_path(os.path.join(save_dir, "ur16e_kinematics_comparison.png"))
     fig1.savefig(fig1_path, dpi=200)
-    fig1.savefig(os.path.join(pkg_outputs_dir, "ur16e_kinematics_comparison.png"), dpi=200)
+    fig1.savefig(_safe_path(os.path.join(pkg_outputs_dir, "ur16e_kinematics_comparison.png")), dpi=200)
 
     # Figure 2: Dynamics & Inverse Torque Comparison
     fig2, axes2 = plt.subplots(3, 2, figsize=(14, 11), sharex=True)
@@ -476,9 +481,9 @@ def run_ur16e_verification_and_animation(
             ax.legend(loc="upper right")
 
     plt.tight_layout()
-    fig2_path = os.path.join(save_dir, "ur16e_dynamics_torque_comparison.png")
+    fig2_path = _safe_path(os.path.join(save_dir, "ur16e_dynamics_torque_comparison.png"))
     fig2.savefig(fig2_path, dpi=200)
-    fig2.savefig(os.path.join(pkg_outputs_dir, "ur16e_dynamics_torque_comparison.png"), dpi=200)
+    fig2.savefig(_safe_path(os.path.join(pkg_outputs_dir, "ur16e_dynamics_torque_comparison.png")), dpi=200)
 
     # Figure 3: Closed-Loop Tracking Performance
     fig3, (ax3a, ax3b) = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
@@ -502,9 +507,9 @@ def run_ur16e_verification_and_animation(
     ax3b.legend(loc="upper right", ncol=6)
 
     plt.tight_layout()
-    fig3_path = os.path.join(save_dir, "ur16e_closed_loop_tracking.png")
+    fig3_path = _safe_path(os.path.join(save_dir, "ur16e_closed_loop_tracking.png"))
     fig3.savefig(fig3_path, dpi=200)
-    fig3.savefig(os.path.join(pkg_outputs_dir, "ur16e_closed_loop_tracking.png"), dpi=200)
+    fig3.savefig(_safe_path(os.path.join(pkg_outputs_dir, "ur16e_closed_loop_tracking.png")), dpi=200)
 
     if verbose:
         print(f"  [OK] Saved comparison figures:")
